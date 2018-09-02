@@ -49,8 +49,7 @@ c              : reset stored mean magnetization values
 
 
 # Compile instructions: 
-The bash script "compile.sh" does the job. It creates an executable ising.x and runs it on a 100x100 lattice with magnification of 3
- 
+Simply run "make". An executable ising.x would be created and run on a 100x100 lattice with magnification of 3
 
 # Prerequisites: 
 The following packages are required to compile it:
