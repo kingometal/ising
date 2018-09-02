@@ -55,7 +55,7 @@ pgk-config, gtk+-2.0, gcc
 
 
 # Command line parameters: 
-ising.h \<lattice size\> \<magnification\>
+ising.x \<lattice size\> \<magnification\>
 
 \<lattice size\>: the simulation simulates an ising model on rectangular lattice of size \<lattice size\>x\<lattice size\>
 
