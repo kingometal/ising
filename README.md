@@ -6,9 +6,14 @@ the code is written by a person (me) who had a very vague idea of c/c++ at that 
 At this point I have no idea of how to write a README
 
 # Description
-The program stores mean magnetization into the file m.out
+The purpose of the program is to visualize the ising model.
+The program simulates the ising model on a rectangular lattice of variable size.
+The lattice nodes are called "fields" here.
+It visualizes the ising model and shows the current temperature, magnetic field and magnetization.
 
-The program stores mean magnetization values per field (a field is one node in the ising lattice), which can be displayed by pressing "m" and reset by pressing "c"
+The propagation of mean magnetization is stored into the file m.out
+
+Mean magnetization values per field are stored internally, and can be displayed by pressing "m"(toggle-key) and reset by pressing "c".
 
 
 # List of the hotkeys:
@@ -60,3 +65,14 @@ ising.x \<lattice size\> \<magnification\>
 \<lattice size\>: the simulation simulates an ising model on rectangular lattice of size \<lattice size\>x\<lattice size\>
 
 \<magnification\>: each field of the lattice is displayed as \<magnification\>x\<magnification\> pixels. 
+
+
+# Experimental: Docker
+For those who prefer using Docker instead of installing required libraries, can try to compile and run the code from a docker-container.
+The script <b>runIsingInDocker.sh</b> contains all required commands and should run out-of-the box. 
+The only prerequisite is installed docker and current user being in the docker group (or run the script as sudo, which is generally not recommended).
+
+I mark this feature experimental because I experienced freezes of the program when running it this way.
+
+# Future scope
+I plan to enhance the source code readability and structure to make the program more comprehensive.
