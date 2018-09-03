@@ -1,0 +1,8 @@
+Makefile
+ising.cc
+ising.h
+main.cpp
+model.cpp
+model.h
+view.cpp
+view.h

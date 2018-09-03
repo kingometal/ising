@@ -1,5 +1,5 @@
 #include <cmath>
-#include <gtk/gtk.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -9,55 +9,24 @@
 int N, NN, N2;//gittergroesse N wird festgesetzt in der "complete_ising_init(int argc, char* argv[])"
 double rezNN;
 int Size = 1, SizeN;// Skalierfaktor, wird auch in "complete_ising_init" initiiert;
-int *s, *sm;//das Gitter und zusaetzliche Arrays zur Mittelwertbildung
-int m;//Magnetisierung
 
-//fenstergroesse
-int height, width;
+
+
 
 double speed;
 
-//die Gitterseitenlaenge N wird festgelegt, und alles, was davon abhaengt wird erneuert
-int setN(int argv){
-	if (argv > 0){
-		N = argv;
-		NN = N*N;
-		N2 = 2*N;
-		speed = 1.0*NN;
-		rezNN = 1.0/(double)NN;
-		s = (int*) malloc((int)sizeof(int)*NN); //das eigentliche gitter
-		sm = (int*) malloc((int)sizeof(int)*NN); // zur mittelwertbildung
-		SizeN = Size*N; // falls das fenster skaliert sein soll
-		height = SizeN+90; //90 px reservieren wir fuer die textausgabe
-		width = (SizeN<300)?300:SizeN; // mindestens 300 px fuer die textausgabe
-		return 1;
-	}
-	else return 0;
-}
+
 
 double Ecurrent = 0;// falls man sich fuer die energie interessiert
 double Emid = 0;
 double Ef();// sehr aufwaendige funktion zum berechnen der energie
 
-// das eigentliche gitter und die gitter zur mittelwertbildung werden gefuellt
-// das eigentliche gitter ist nach zufall mit -1 oder 1 gefuellt;
-// die anfangs-magnetisierung und die anfangsenergie werden auch gleich berechnet
-int set_lattice(){
-	m = 0;
-	if (N <= 0) return 0;
-	for (int i = 0; i < NN; i++){
-		s[i] = 2*(rand()%2) - 1;
-		sm[i] = 0;
-		m += s[i];
-	}	
-	Ecurrent = Ef();
-	return 1;
-}
 
 
-double T, Tstep, H, Hstep, J; //T Temperatur, H Magnetfeld, J Kopplung;
+
+double T, dT, H, dH, J; //T Temperatur, H Magnetfeld, J Kopplung;
 // anfangswerte werden in der init_ising() festgelegt und koennen durch tastaturbefehle geaendert werden (ausser J)
-//Tstep und Hstep sind die Schritte in denen man die T und H durch die Tastaturbefehle veraendern kann
+//dT und dH sind die Schritte in denen man die T und H durch die Tastaturbefehle veraendern kann
 
 long double eT; // das wird spaeter exp (-2/kB*T), damit man den Wert nicht immer neu berechnen muss
 const double kB = 0.00008673324; //Boltzmann-Konstante;
@@ -82,9 +51,9 @@ int update_strings(){
 	speedStr = (char*) malloc (sizeof(char)*100);
 
 	sprintf (TStr, " T=%12.5lf", T);
-	sprintf (TstepStr, "dT=%12.5lf", Tstep);
+    sprintf (TstepStr, "dT=%12.5lf", dT);
 	sprintf (HStr, " H=%13.9lf", H);
-	sprintf (HstepStr, "dH=%13.9lf", Hstep);
+    sprintf (HstepStr, "dH=%13.9lf", dH);
 	sprintf (speedStr, "speed=%6.3lf", speed*rezNN);
 	return 1;
 }
@@ -101,16 +70,7 @@ int update_mStr(){
 
 void updateT();// Alles, was von Temperatur abhaengt, wird neu berechnet; wird nach einer manuellen Temperaturaenderung aufgerufen
 
-int init_ising(){
-	T = 1940.0;
-	updateT();
-	Tstep = 1.000;
-	H = 0.001;// in eV
-	Hstep = 0.001;
-	J = 0.042;// in eV
-	update_strings();
-	return set_lattice();
-}
+
 
 int flip(int i){//selbsterklaerend
 	s[i] = -s[i];
@@ -173,39 +133,7 @@ void resetMeanValues(){
 }
 
 
-//wird aufgerufen, wenn eine taste gedrueckt wurde
-gboolean keypress( GtkWidget *wi, GdkEventKey *event, gpointer func_data){ 
-	bool reset = 0;
-        switch (event->keyval){ 
-                case 65362:     H = H+Hstep;    reset = 1;	break;                                          //UP  
-                case 65364:     H = H-Hstep;    reset = 1;	break;                                          //DOWN
-                case 65361:     Hstep *= 10;    break;                                          //LEFT
-                case 65363:     Hstep /= 10;    break;                                          //RIGHT
-                case 65451:     T = T+Tstep;    updateT();	break;                          // +
-                case 65453:     T = T-Tstep;    if (T<0.0) T = 0.0;	updateT();	break;  // - 
-                case 65450:     Tstep *= 10;    break;                                          // *  
-                case 65455:     Tstep /= 10;    break;                                          // /
-                case 65456:     H = 0;          reset = 1;	break;                                          // 0  
-                case 114:       init_ising();   reset = 1;	break;                          //r  
-                case 110:       set_lattice();  reset = 1;	break;                          //n  
-                case 97:        H += Hstep;     reset = 1;	break;                          //a  
-                case 115:       H -= Hstep;     reset = 1;	break;                          //s  
-                case 108:       Hstep /= 10;    break;                                          //l  
-                case 107:       Hstep *= 10;    break;                                          //k
-                case 113:       T += Tstep;     updateT();     break;                           //q  
-                case 119:       T -= Tstep;     if (T<0.0) T=0.0;	updateT();	break;  //w  
-                case 105:       Tstep *= 10;    break;                                          //i  
-                case 111:       Tstep /= 10;    break;                                          //o  
-                case 101:       speed *= 2;     break;                                          //e 
-                case 100:       speed /= 2;     break;                                          //d 
-                case 109:       showmeanvalues= !showmeanvalues;	break;                  //m
-		case 99:        resetMeanValues();	break;                                  //c
-        } 
-//      printf ("%i \n", event->keyval);//ich benutze diese zeile um die keyvals fuer neue tastenbefehle zu bestimmen
-	update_strings();
-	if (reset) resetCounter();
-        return TRUE; 
-}
+
 
 
 //Texte zeichnen
@@ -285,13 +213,5 @@ void do_ising(cairo_t *cr){
 }
 
 
-void complete_ising_init(int argc, char* argv[]){
-    srand(time(0));
-    mOut = fopen ("m.out", "w");
-    if (argc == 2) setN(atoi(argv[1]));
-    else if (argc == 3){ Size = atoi(argv[2]); setN(atoi(argv[1]));}
-        else setN(100);
-    init_ising( );
-}
 
 
