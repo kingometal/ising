@@ -32,9 +32,11 @@ namespace
 
     void * do_draw(void *ptr){
         currently_drawing = 1;
+        gdk_threads_enter();
+
         static int execcount = 0;
         static int lastExecCount = execcount;
-        static int maxExecCount = 20;
+        static int maxExecCount = 30;
         static milliseconds previousCheckpoint;
         static milliseconds currentCheckpoint = previousCheckpoint;
         if (execcount++ % maxExecCount == 0)
@@ -52,31 +54,33 @@ namespace
 
         {
 
-        gdk_threads_enter();
-        gdk_drawable_get_size(pixmap, &WindowWidth, &WindowHeight);
+//        gdk_drawable_get_size(pixmap, &WindowWidth, &WindowHeight);
 
     //    do_ising(cr);
         int i = 0;
 //        cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
 //        cairo_paint(cr);
 //        cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+//        double timeValue = 2*((execcount/(double)maxExecCount)<0.5?(execcount/(double)maxExecCount):1.0-(execcount/(double)maxExecCount));
+//        double randomValue = 2*(rand()%2)-0.5;
 
         for (int j = 0; j< WindowHeight; j++)
+        {
             for (int k = 0; k< WindowWidth ; k++){
-                    double timeValue = (execcount/(double)maxExecCount);
-                    double xvalue = 0.5*sin(3.14*10*timeValue*k/(double)WindowWidth) + 0.5;
-                    double yvalue = 0.5*sin(3.14*20*timeValue*j/(double)WindowHeight) + 0.5;
-                    double randomValue = 1;//2*(rand()%2)-0.5;
-                    cairo_set_source_rgba (cr, xvalue*randomValue , yvalue*timeValue, 0, 1);
-                    cairo_rectangle(cr, k, j, 1,1);
-                    cairo_fill (cr);
+//                    double xvalue = 0.5*sin(3.14*100*timeValue*k/(double)WindowWidth) + 0.5;
+//                    double yvalue = 0.5*sin(3.14*50*timeValue*j/(double)WindowHeight) + 0.5;
+//                    cairo_set_source_rgba (cr, 1 , 0.5, 0, 1);
+                    if (k==j+execcount) cairo_rectangle(cr, k, j, 1,1);
+//                    cairo_fill (cr);
                     i++;
             }
-//        cairo_fill(cr);
+        }
+
+        cairo_fill(cr);
 
         //When dealing with gdkPixmap's, we need to make sure not to
         //access them from outside gtk_main().
-        cairo_set_source_surface (cr_pixmap, cst, 0, 0);
+        //cairo_set_source_surface (cr_pixmap, cst, 0, 0);
         cairo_paint(cr_pixmap);
         gdk_threads_leave();
         }
@@ -87,14 +91,20 @@ namespace
 
     typedef void * (*THREADFUNCPTR)(void *);
 
-    gboolean timer_exe(GtkWidget * window){
-    static gboolean first_execution = TRUE;
-    if (first_execution)
+gboolean timer_exe(GtkWidget * window)
     {
-        cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WindowWidth, WindowHeight);
-        cr = cairo_create(cst);
-        cr_pixmap = gdk_cairo_create(pixmap);
-    }
+        static gboolean first_execution = TRUE;
+        if (first_execution)
+        {
+            cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WindowWidth, WindowHeight);
+            cr = cairo_create(cst);
+            cr_pixmap = gdk_cairo_create(pixmap);
+            cairo_set_source_surface (cr_pixmap, cst, 0, 0);
+            cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
+            cairo_paint(cr);
+            cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+    //        cairo_paint(cr_pixmap);
+        }
 
     //use a safe function to get the value of currently_drawing so
     //we don't run into the usual multithreading issues
@@ -224,8 +234,8 @@ void View::InitGtk(int argc, char *argv[])
     gtk_widget_set_app_paintable(window, TRUE);
     gtk_widget_set_double_buffered(window, FALSE);
 
-    (void)g_timeout_add(50, (GSourceFunc) timer_exe, window);
-    (void)g_timeout_add(60, (GSourceFunc) calculate, window);
+    (void)g_timeout_add(2, (GSourceFunc) timer_exe, window);
+//    (void)g_timeout_add(60, (GSourceFunc) calculate, window);
 
     gtk_main();
     gdk_threads_leave();
