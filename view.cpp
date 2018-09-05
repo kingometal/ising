@@ -9,6 +9,7 @@
 // ...
 
 using namespace std::chrono;
+using namespace std;
 
 
 void complete_ising_init(int argc, char** argv)
@@ -22,8 +23,9 @@ namespace
     int WindowWidth = 0;
     int WindowHeight = 0;
     int calculating = 0;
-
-//    std::map<int, std::map<int,double>> points;
+    int magnitude = 2;
+    int* buffer1;
+    int* buffer2;
 
     GdkPixmap *pixmap = NULL;
     cairo_surface_t *cst;
@@ -32,58 +34,61 @@ namespace
 
     void * do_draw(void *ptr){
         currently_drawing = 1;
-        gdk_threads_enter();
 
-        static int execcount = 0;
-        static int lastExecCount = execcount;
-        static int maxExecCount = 30;
+        static int framecount = 0;
         static milliseconds previousCheckpoint;
-        static milliseconds currentCheckpoint = previousCheckpoint;
-        if (execcount++ % maxExecCount == 0)
+        ++framecount;
+        milliseconds currentTime = duration_cast< milliseconds >(system_clock::now().time_since_epoch());
+        if ( (currentTime - previousCheckpoint).count() >= 1000)
+//        if (++execcount % maxExecCount == 0)
         {
-            currentCheckpoint = duration_cast< milliseconds >(system_clock::now().time_since_epoch());
-            std::cout << "timer exe" << execcount << ":" << currentCheckpoint.count() << std::endl;
-            if (currentCheckpoint > previousCheckpoint)
+//            std::cout << "timer exe" << execcount << ":" << currentTime.count() << std::endl;
+            if (currentTime > previousCheckpoint)
             {
-                std::cout << "fpms:" << (double) (execcount-lastExecCount) / (double) ((currentCheckpoint-previousCheckpoint).count()/1000.0) << std::endl;
+                std::cout << "fps:" << (double) (framecount) / (double) ((currentTime-previousCheckpoint).count()/1000.0) << std::endl;
             }
-            previousCheckpoint = currentCheckpoint;
-            execcount = 1;
-            lastExecCount = execcount;
+            framecount = 0;
+            previousCheckpoint = currentTime;
         }
 
-        {
 
+        gdk_threads_enter();
 //        gdk_drawable_get_size(pixmap, &WindowWidth, &WindowHeight);
-
+        static int counter = 0;
+        static int MaxCounter = 255;
+        if (++counter % MaxCounter == 0)
+        {
+            counter = 0;
+        }
     //    do_ising(cr);
-        int i = 0;
-//        cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
+//        cairo_set_source_rgb (cr, 1.0, 0.5, 1.0);
 //        cairo_paint(cr);
 //        cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-//        double timeValue = 2*((execcount/(double)maxExecCount)<0.5?(execcount/(double)maxExecCount):1.0-(execcount/(double)maxExecCount));
-//        double randomValue = 2*(rand()%2)-0.5;
+        double timeValue = 2*((counter/(double)MaxCounter)<0.5?(counter/(double)MaxCounter):1.0-(counter/(double)MaxCounter));
 
-        for (int j = 0; j< WindowHeight; j++)
+        for (int j = 0; j< WindowHeight; j+=magnitude)
         {
-            for (int k = 0; k< WindowWidth ; k++){
-//                    double xvalue = 0.5*sin(3.14*100*timeValue*k/(double)WindowWidth) + 0.5;
-//                    double yvalue = 0.5*sin(3.14*50*timeValue*j/(double)WindowHeight) + 0.5;
-//                    cairo_set_source_rgba (cr, 1 , 0.5, 0, 1);
-                    if (k==j+execcount) cairo_rectangle(cr, k, j, 1,1);
-//                    cairo_fill (cr);
-                    i++;
+            int index1 = j*WindowWidth;
+            for (int k = 0; k< WindowWidth ; k+=magnitude){
+                int index = index1 + k;
+                buffer1[index] = timeValue*255.0;
+                if (abs(buffer2[index] - buffer1[index]) >= 10)
+                {
+                    cairo_set_source_rgba (cr, (buffer1[index]/(double) 255), (buffer1[index]/(double) 255), 0, 1);
+                    cairo_rectangle(cr, k, j, magnitude,magnitude);
+                    cairo_fill (cr);
+                    buffer2[index] = buffer1[index];
+                }
             }
         }
 
-        cairo_fill(cr);
+//        cairo_fill(cr);
 
         //When dealing with gdkPixmap's, we need to make sure not to
         //access them from outside gtk_main().
-        //cairo_set_source_surface (cr_pixmap, cst, 0, 0);
         cairo_paint(cr_pixmap);
         gdk_threads_leave();
-        }
+
         currently_drawing = 0;
 
         return NULL;
@@ -93,6 +98,7 @@ namespace
 
 gboolean timer_exe(GtkWidget * window)
     {
+        static int queuecounter = 0;
         static gboolean first_execution = TRUE;
         if (first_execution)
         {
@@ -103,6 +109,13 @@ gboolean timer_exe(GtkWidget * window)
             cairo_set_source_rgb (cr, 1.0, 1.0, 1.0);
             cairo_paint(cr);
             cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
+            buffer1 = (int*) malloc((int)sizeof(int)*WindowHeight*WindowWidth);
+            buffer2 = (int*) malloc((int)sizeof(int)*WindowHeight*WindowWidth);
+            for (int i = 0; i < WindowHeight*WindowWidth; i++)
+            {
+                buffer1[i] = 1;
+                buffer2[i] = 0;
+            }
     //        cairo_paint(cr_pixmap);
         }
 
@@ -119,12 +132,18 @@ gboolean timer_exe(GtkWidget * window)
                 pthread_join(thread_info, NULL);
             }
             iret = pthread_create( &thread_info, NULL, &do_draw, NULL);
+
+            gtk_widget_queue_draw_area(window, 0, 0, WindowWidth, WindowHeight);
+        }
+        else
+        {
+//            cout << "skip" << endl;
         }
 
 
     //    //tell our window it is time to draw our animation.
     //    gdk_drawable_get_size(pixmap, &width, &height);
-        gtk_widget_queue_draw_area(window, 0, 0, WindowWidth, WindowHeight);
+
         first_execution = FALSE;
         return TRUE;
     }
@@ -156,6 +175,8 @@ gboolean timer_exe(GtkWidget * window)
     //                case 65363:     dH /= 10;    break;                                          //RIGHT
     //                case 65451:     T = T+dT;    updateT();	break;                          // +
     //                case 65453:     T = T-dT;    if (T<0.0) T = 0.0;	updateT();	break;  // -
+                        case 65451:     magnitude = magnitude+1; break;                          // +
+                        case 65453:     magnitude = (magnitude>1)?magnitude-1:magnitude;	break;  // -
     //                case 65450:     dT *= 10;    break;                                          // *
     //                case 65455:     dT /= 10;    break;                                          // /
     //                case 65456:     H = 0;          reset = 1;	break;                                          // 0
@@ -234,7 +255,7 @@ void View::InitGtk(int argc, char *argv[])
     gtk_widget_set_app_paintable(window, TRUE);
     gtk_widget_set_double_buffered(window, FALSE);
 
-    (void)g_timeout_add(2, (GSourceFunc) timer_exe, window);
+    (void)g_timeout_add(10, (GSourceFunc) timer_exe, window);
 //    (void)g_timeout_add(60, (GSourceFunc) calculate, window);
 
     gtk_main();

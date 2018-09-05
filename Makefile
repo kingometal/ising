@@ -3,7 +3,7 @@ FLAGS = -std=c++11 `pkg-config --cflags gtk+-2.0 --libs`
 GCC = c++
 
 all: directories ising.x
-#	./ising.x 400 3
+	./ising.x 400 3
 
 ising.x: $(OUTDIR)/main.o $(OUTDIR)/view.o $(OUTDIR)/model.o
 	$(GCC) $(FLAGS) -o ising.x $(OUTDIR)/main.o $(OUTDIR)/view.o $(OUTDIR)/model.o `pkg-config --cflags gtk+-2.0 --libs`;
