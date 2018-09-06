@@ -21,6 +21,14 @@ void Draw() {
         }
         glutPostRedisplay();
 	// ---------
+	
+	// 
+	
+	//  glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+	//  width, and height is the size of your buffer you want to copy.
+	//  format is is the format (how color components ate stored) you want to store the data in the video memory. It depends on how you initialized you application, if you set it to GL_RGBA, then format is GL_RGBA.
+	//  type is what kind of data you want openGL to read. GL_UNSIGNED_CHAR if your image contains unsigned byte values to represent red, green and blue (maybe alpha too) values float 0 to 255, or GL_FLOAT if it's floats from 0 to 1.
+	//  *pixels is a pointer to where you store your data to be copied.
 }
 
 void Initialize() {
@@ -35,7 +43,7 @@ int main(int argc, char** argv) {
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(250, 250);
 	glutInitWindowPosition(200, 200);
-	glutCreateWindow("XoaX.net");
+	glutCreateWindow("myWindow");
 	Initialize();
 	glutDisplayFunc(Draw);
 	glutMainLoop();
