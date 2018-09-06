@@ -1,6 +1,6 @@
 EXECUTABLE=text.x
 OUTDIR = build
-FLAGS = -std=c++11 -lglut -lGL -lGLU
+FLAGS = -std=c++11 -lsdl
 GCC = c++
 
 all: directories $(EXECUTABLE)
