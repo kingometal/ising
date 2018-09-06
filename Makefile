@@ -1,29 +1,22 @@
+EXECUTABLE=text.x
 OUTDIR = build
-FLAGS = -std=c++11 `pkg-config --cflags gtk+-2.0 --libs`
+FLAGS = -std=c++11 -lglut -lGL -lGLU
 GCC = c++
 
-all: directories ising.x
-	./ising.x 400 3
+all: directories $(EXECUTABLE)
+	./$(EXECUTABLE)
 
-ising.x: $(OUTDIR)/main.o $(OUTDIR)/view.o $(OUTDIR)/model.o
-	$(GCC) $(FLAGS) -o ising.x $(OUTDIR)/main.o $(OUTDIR)/view.o $(OUTDIR)/model.o `pkg-config --cflags gtk+-2.0 --libs`;
+$(EXECUTABLE): $(OUTDIR)/main.o 
+	$(GCC) $(FLAGS) -o $(EXECUTABLE) $(OUTDIR)/main.o -lglut -lGL -lGLU
 
-$(OUTDIR)/main.o: main.cpp view.h
-	$(GCC) $(FLAGS) -c main.cpp -o $(OUTDIR)/main.o
-
-$(OUTDIR)/model.o: model.cpp model.h
-	$(GCC) $(FLAGS) -c model.cpp -o $(OUTDIR)/model.o
-
-$(OUTDIR)/view.o: view.cpp view.h
-	$(GCC) $(FLAGS) -c view.cpp -o $(OUTDIR)/view.o
-
+$(OUTDIR)/main.o: main.cpp
+	$(GCC) $(FLAGS) -c main.cpp -o $(OUTDIR)/main.o 
 
 directories: $(OUTDIR)
-
 
 $(OUTDIR):
 	mkdir -p $(OUTDIR)
 
 clean: 
 	rm -rf $(OUTDIR)
-	rm ising.x
+	rm $(EXECUTABLE)
