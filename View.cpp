@@ -11,6 +11,49 @@ namespace
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
+void HandleKeyPress(SDL_Keycode code, ModelInterface* model)
+{
+    switch( code )
+    {
+    case SDLK_q: Quit = true;
+        break;
+    case SDLK_KP_PLUS:
+        model->KeyPressed(KEY_NUM_PLUS);
+        break;
+    case SDLK_KP_MINUS:
+        model->KeyPressed(KEY_NUM_MINUS);
+        break;
+    case SDLK_KP_DIVIDE:
+        model->KeyPressed(KEY_NUM_DIVIDE);
+        break;
+    case SDLK_KP_MULTIPLY:
+        model->KeyPressed(KEY_NUM_MULTIPLY);
+        break;
+    case SDLK_LEFT:
+        model->KeyPressed(KEY_ARROW_LEFT);
+        break;
+    case SDLK_RIGHT:
+        model->KeyPressed(KEY_ARROW_RIGHT);
+        break;
+    case SDLK_UP:
+        model->KeyPressed(KEY_ARROW_UP);
+        break;
+    case SDLK_DOWN:
+        model->KeyPressed(KEY_ARROW_DOWN);
+        break;
+    case SDLK_a:
+        model->KeyPressed(KEY_A);
+        break;
+    case SDLK_s:
+        model->KeyPressed(KEY_S);
+        break;
+
+
+    default:
+        break;
+    }
+}
+
 void* RunView(void* arg)
 {
     ModelInterface* model = static_cast<ModelInterface*>(arg);
@@ -58,7 +101,7 @@ void* RunView(void* arg)
                 // Main Loop
                 while( !Quit )
                 {
-                    while( SDL_PollEvent( &e ) != 0 )
+                    if( SDL_PollEvent( &e ) != 0 )
                     {
                         //User requests quit
                         if( e.type == SDL_QUIT )
@@ -71,47 +114,10 @@ void* RunView(void* arg)
                         {
                             //Select surfaces based on key press
                             pthread_mutex_lock(&mutex); // critical section
-                            switch( e.key.keysym.sym )
-                            {
-                            case SDLK_q: Quit = true;
-                                break;
-                            case SDLK_KP_PLUS:
-                                model->KeyPressed(KEY_NUM_PLUS);
-                                break;
-                            case SDLK_KP_MINUS:
-                                model->KeyPressed(KEY_NUM_MINUS);
-                                break;
-                            case SDLK_KP_DIVIDE:
-                                model->KeyPressed(KEY_NUM_DIVIDE);
-                                break;
-                            case SDLK_KP_MULTIPLY:
-                                model->KeyPressed(KEY_NUM_MULTIPLY);
-                                break;
-                            case SDLK_LEFT:
-                                model->KeyPressed(KEY_ARROW_LEFT);
-                                break;
-                            case SDLK_RIGHT:
-                                model->KeyPressed(KEY_ARROW_RIGHT);
-                                break;
-                            case SDLK_UP:
-                                model->KeyPressed(KEY_ARROW_UP);
-                                break;
-                            case SDLK_DOWN:
-                                model->KeyPressed(KEY_ARROW_DOWN);
-                                break;
-                            case SDLK_a:
-                                model->KeyPressed(KEY_A);
-                                break;
-                            case SDLK_s:
-                                model->KeyPressed(KEY_S);
-                                break;
-
-
-                            default:
-                                break;
-                            }
+                            HandleKeyPress(e.key.keysym.sym, model);
                             pthread_mutex_unlock(&mutex); // end of critical section
                         }
+                        SDL_FlushEvents(SDL_KEYDOWN,SDL_KEYDOWN);
                     }
 
                     //-----------------------
@@ -146,7 +152,8 @@ void* RunView(void* arg)
                                 {
                                     int index = index0 + x;
                                     int value = (int)(model->GetNormalizedData(x, y)*255);
-                                    pixels[index] = value | value << 8 | value <<16 | value << 24 ;
+//                                    pixels[index] = (value>100?value-100:0) | (value>100?value-100:0) << 8 | (255-(value<200?value+55:255)) <<16 | value << 24 ;
+                                    pixels[index] = (value) | (value) << 8 | (value) <<16 | value << 24 ;
                                 }
                             }
                         }
@@ -182,6 +189,7 @@ void* RunModel(void* arg)
         pthread_mutex_lock(&mutex);
         model->Iterate();
         pthread_mutex_unlock(&mutex);
+        usleep(100);
     }
     return NULL;
 }

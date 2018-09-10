@@ -14,10 +14,13 @@ Model::Model(int width, int height)
     : GridWidth(width)
     , GridHeight(height)
     , SourceCount(2)
+    , SourceDistance(100)
     , TimeStage(0.0)
     , TimeStep(0.1)
-    , Nodes(NULL)
-    , Amplitude(NULL)
+    , K(0.1)
+    , Omega(5)
+    , Nodes()
+    , Amplitude()
 {
     ReinitGrid(width, height);
 }
@@ -29,15 +32,8 @@ Model::~Model()
 
 void Model::DeinitGrid()
 {
-    if (NULL != Amplitude)
-    {
-        delete Amplitude;
-        Amplitude = NULL;
-    }
-    if (NULL != Nodes)
-    {
-        delete Nodes;
-    }
+    Amplitude.clear();
+    Nodes.clear();
 }
 
 void Model::ReinitGrid(int width, int height)
@@ -45,33 +41,41 @@ void Model::ReinitGrid(int width, int height)
     GridHeight = height;
     GridWidth = width;
     int NN = width * height;
-
     DeinitGrid();
-
     if (NN > 0)
     {
-        Amplitude = (double*) malloc((int)sizeof(double)*NN); // the grid
         for (int i = 0; i < NN; i++)
         {
-            Amplitude[i]=0.5;
+            Amplitude.push_back(0.5);
         }
-        Source Sources[SourceCount];
-        Sources[0].x = 100.0;
-        Sources[0].y = 0.0;
-        Sources[1].x = 110.0;
-        Sources[1].y = 0.0;
 
-        Nodes = (Node*) malloc((int)sizeof(Node)*NN); // the grid
+        Source Sources[SourceCount];
+        for (int q = 0; q < SourceCount; q++)
+        {
+            Sources[q].x = width/2+(((q%2)*2)-1)*(q/2 + 1)*SourceDistance/2;
+            std::cout << Sources[q].x << std::endl;
+            Sources[q].y = 0.0;
+        }
+
+        try
+        {
         for (int x = 0; x < GridWidth; x++)
         {
             for (int y = 0; y < GridHeight; y++)
             {
                 int i = x*GridHeight + y;
+                Node n;
                 for (int q = 0; q < SourceCount; q++)
                 {
-                    Nodes[i].distanceToSource.push_back(sqrt(pow(Sources[q].x - x, 2) + pow(Sources[q].y - y, 2)));
+                    n.distanceToSource.push_back(sqrt(pow(Sources[q].x - x, 2) + pow(Sources[q].y - y, 2)));
                 }
+                Nodes.push_back(n);
             }
+        }
+        }
+        catch (...)
+        {
+            std::cout << "exception" << std::endl;
         }
     }
     else
@@ -114,8 +118,7 @@ int Model::SetAmplitude(int x, int y, double value)
 void Model::Iterate()
 {
     TimeStage += TimeStep;
-    double omega = 5.0;
-    double TimeComponent = omega*TimeStage;
+    double TimeComponent = Omega*TimeStage;
     for (int x = 0; x < GridWidth; x++)
     {
         int indexx = x*GridHeight;
@@ -125,7 +128,7 @@ void Model::Iterate()
             Amplitude[i] = 0.0;
             for (int q = 0; q < SourceCount; q++)
             {
-                Amplitude[i] += sin(Nodes[i].distanceToSource[q] - TimeComponent);
+                Amplitude[i] += sin(K*Nodes[i].distanceToSource[q] - TimeComponent);
             }
             Amplitude[i] *= (MAX_AMPLITUDE/SourceCount);
 
@@ -137,14 +140,14 @@ void Model::KeyPressed(KeyCode key)
 {
     switch(key)
     {
-    case KEY_NUM_PLUS:      break;
-    case KEY_NUM_MINUS:     break;
-    case KEY_NUM_MULTIPLY:  break;
-    case KEY_NUM_DIVIDE:    break;
-    case KEY_ARROW_LEFT:    break;
-    case KEY_ARROW_RIGHT:   break;
-    case KEY_ARROW_DOWN:    break;
-    case KEY_ARROW_UP:      break;
+    case KEY_NUM_PLUS: SourceDistance+=10; ReinitGrid(GridWidth,GridHeight);  break;
+    case KEY_NUM_MINUS: SourceDistance -=10; ReinitGrid(GridWidth,GridHeight);    break;
+    case KEY_NUM_MULTIPLY:  Omega+= 1; break;
+    case KEY_NUM_DIVIDE: Omega-=1;   break;
+    case KEY_ARROW_LEFT: K -= 0.05;   break;
+    case KEY_ARROW_RIGHT:K += 0.05;   break;
+    case KEY_ARROW_DOWN: SourceCount--; ReinitGrid(GridWidth,GridHeight);    break;
+    case KEY_ARROW_UP: SourceCount++; ReinitGrid(GridWidth,GridHeight);     break;
     case KEY_A:             break;
     case KEY_S:             break;
     default: break;

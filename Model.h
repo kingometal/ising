@@ -25,7 +25,7 @@ class Node
 {
     public:
     Node() {}
-    ~Node(){}
+    ~Node(){distanceToSource.clear();}
     std::vector<double> distanceToSource;
 };
 
@@ -38,10 +38,13 @@ public:
     int GridWidth;
     int GridHeight;
     int SourceCount;
+    int SourceDistance;
     double TimeStage;
     double TimeStep;
-    Node * Nodes;
-    double *Amplitude;
+    double K;
+    double Omega;
+    std::vector<Node> Nodes;
+    std::vector<double> Amplitude;
 
     int GetWidth();
     int GetHeight();
