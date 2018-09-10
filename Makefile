@@ -1,5 +1,5 @@
 # Defines
-EXECUTABLE=ising.x
+EXECUTABLE=waves.x
 OUTDIR = build
 FLAGS = -std=c++11 -lSDL2 -lpthread
 GCC = c++

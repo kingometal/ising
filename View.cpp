@@ -24,7 +24,7 @@ void* RunView(void* arg)
     }
     else
     {
-        SDL_Window* gWindow = SDL_CreateWindow( "Ising Model", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN );
+        SDL_Window* gWindow = SDL_CreateWindow( "Wave Experiments", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN );
         if( gWindow == NULL )
         {
             printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -145,15 +145,8 @@ void* RunView(void* arg)
                                 for (int x = 0; x < gScreenSurface->w; x++)
                                 {
                                     int index = index0 + x;
-                                    if (model->GetBinaryData(x, y))
-                                    {
-                                        pixels[index] = 0x00000000;
-                                    }
-                                    else
-                                    {
-                                        pixels[index] = 0xFFFFFFFF;
-                                    }
-
+                                    int value = (int)(model->GetNormalizedData(x, y)*255);
+                                    pixels[index] = value | value << 8 | value <<16 | value << 24 ;
                                 }
                             }
                         }

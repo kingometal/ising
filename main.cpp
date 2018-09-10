@@ -8,7 +8,7 @@ const int SCREEN_HEIGHT = 300;
 
 int main(int argc, char** argv) 
 {
-    Ising::Model model (SCREEN_WIDTH, SCREEN_HEIGHT);
+    Waves::Model model (SCREEN_WIDTH, SCREEN_HEIGHT);
 
     { // drawing thread
 	    pthread_t thread_info;

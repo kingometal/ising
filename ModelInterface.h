@@ -12,7 +12,7 @@ public:
     virtual int GetWidth() = 0;
     virtual int GetHeight() = 0;
     virtual bool GetBinaryData(int x, int y) = 0;
-    virtual int GetData(int x, int y) = 0;
+    virtual double GetNormalizedData(int x, int y) = 0;
 
     virtual void Iterate() = 0;
     virtual void KeyPressed(KeyCode key) = 0;

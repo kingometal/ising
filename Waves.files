@@ -1,8 +1,7 @@
-Makefile
 KeyCodes.h
-main.cpp
 Model.cpp
 Model.h
 ModelInterface.h
 View.cpp
 View.h
+main.cpp
