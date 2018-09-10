@@ -2,19 +2,23 @@
 #include <SDL2/SDL.h>
 #include <chrono>
 #include <iostream>
+#include <unistd.h>
+#include "modelinterface.h"
 
 namespace
 {
 
-//    uint32_t PixelBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
     bool Quit;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
-void* run(void* ptr)
+void* run(void* arg)
 {
-    std::cout << "start run" << std::endl;
-    uint32_t* PixelBuffer = (uint32_t*) ptr;
-    std::cout << "pixbuf" << PixelBuffer[0] << std::endl;
+    ModelInterface* model = static_cast<ModelInterface*>(arg);
+
+    int height = model->GetHeight();
+    int width = model->GetWidth();
+
     //The window we'll be rendering to
     SDL_Window* gWindow = NULL;
     //The surface contained by the window
@@ -28,7 +32,7 @@ void* run(void* ptr)
     else
     {
         //Create window
-        gWindow = SDL_CreateWindow( "Ising Model", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+        gWindow = SDL_CreateWindow( "Ising Model", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN );
         if( gWindow == NULL )
         {
             printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -52,9 +56,12 @@ void* run(void* ptr)
                 uint32_t* pixels = ((Uint32 *) (gScreenSurface->pixels));
 
 
+                //-----------------
+                // Init FPS counter
                 std::chrono::milliseconds currentTime = std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch());
                 std::chrono::milliseconds previousCheckpoint = currentTime;
                 int framecount = 0;
+                //-----------------
 
                 // Main Loop
                 while( !Quit )
@@ -105,6 +112,7 @@ void* run(void* ptr)
                     //-----------------------
                     // Fill Surface
                     {
+                        pthread_mutex_lock(&mutex);
                         if (gScreenSurface != NULL)
                         {
                             for (int y = 0; y < gScreenSurface->h; y++)
@@ -113,13 +121,21 @@ void* run(void* ptr)
                                 for (int x = 0; x < gScreenSurface->w; x++)
                                 {
                                     int index = index0 + x;
-                                    //                            std::cout << "new pixel RGB: " << (newPixel&0xFF) << " " << ((newPixel >> 8) &0xFF) << " " << ((newPixel >> 16) &0xFF) << " "<< ((newPixel >> 24) &0xFF) << " "<< std::endl;
+                                    if (model->GetBinaryData(x, y))
+                                    {
+                                        pixels[index] = 0x00000000;
+                                    }
+                                    else
+                                    {
+                                        pixels[index] = 0xFFFFFFFF;
+                                    }
 
-                                    pixels[index] = PixelBuffer[index];
                                 }
+                 //usleep(10);
                             }
-
                         }
+                        pthread_mutex_unlock(&mutex);
+                   // usleep(50000);
                         //-----------------------
 
                         //Update the surface
@@ -144,28 +160,15 @@ void* run(void* ptr)
 
 void* fillPixels(void* arg)
 {
-    std::cout << "start fill pixels" << std::endl;
-    uint32_t* PixelBuffer = (uint32_t*) arg;
-    std::cout << "pixbuf" << PixelBuffer[0] << std::endl;
-    int timer = 0;
+    ModelInterface* model = static_cast<ModelInterface*> (arg);
+
     while (false == Quit)
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-        {
-            int index0 = y * SCREEN_WIDTH;
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                int index = index0 + x;
+        pthread_mutex_lock(&mutex);
+        model->Iterate();
+        pthread_mutex_unlock(&mutex);
 
-                uint32_t newPixel = 0;
-                newPixel |= 255 << 24 ;
-                newPixel |= ((y+timer)%255) << 16 ;
-                newPixel |= ((x+timer)%255) << 8 ;
-                newPixel |= (timer)%255  ;
-                PixelBuffer[index] = newPixel;
-            }
-        }
-        timer++;
+        usleep(100);
     }
     return NULL;
 }

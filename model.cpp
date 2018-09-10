@@ -1,6 +1,7 @@
 #include "model.h"
 #include <stdlib.h>
 #include <iostream>
+#include <cmath>
 
 //die Gitterseitenlaenge N wird festgelegt, und alles, was davon abhaengt wird erneuert
 //int setN(int argv){
@@ -20,9 +21,22 @@
 //    else return 0;
 //}
 
+namespace
+{
+const double BOLTZMANN_CONST = 0.00008673324; //Boltzmann-Konstante;
+}
+
 Model::Model()
 {
 
+}
+
+Model::Model(int width, int height)
+{
+    GridWidth = width;
+    GridHeight = height;
+    SetGrid(width, height);
+    InitModel();
 }
 
 Model::~Model()
@@ -47,6 +61,75 @@ void Model::SetGrid(int width, int height)
     }
 }
 
+int Model::GetWidth()
+{
+    return GridWidth;
+}
+
+int Model::GetHeight()
+{
+    return GridHeight;
+}
+
+bool Model::GetBinaryData(int x, int y)
+{
+    return (GetMagnetization(x,y) > 0);
+}
+
+int Model::GetData(int x, int y)
+{
+    return 0;
+}
+
+int Model::GetMagnetization(int x, int y)
+{
+    return NodeMagnetization[x*GridHeight + y];
+}
+
+int Model::SetNodeMagnetization(int x, int y, int value)
+{
+    NodeMagnetization[x*GridHeight + y] = value;
+}
+
+void Model::Iterate()
+{
+    int w = GridWidth;
+    int h = GridHeight;
+
+    for (int i = 0; i < w*h/10; i++)
+    {
+        int mf = 0;
+
+        int x = rand()%w;//zufaellig ausgewaehlter spin
+        int y = rand()%h;//zufaellig ausgewaehlter spin
+
+        if (x > 0 && x < w-1 && y > 0 && y < w-1){// wenn der spin i im inneren ist, brauche ich kein modulo fuer die nachbarindices
+            mf = GetMagnetization(x,y-1) + GetMagnetization(x,y+1) + GetMagnetization(x+1,y) + GetMagnetization(x-1,y) ;
+        }
+        else
+        {
+            mf = GetMagnetization(x,(y+h-1)%h) + GetMagnetization(x,(y+1)%h) + GetMagnetization((x+1)%w,y) + GetMagnetization((x+w-1)%w,y) ;
+        }
+
+        double dE = (J*mf + H)*GetMagnetization(x,y); // die Energiedifferenz. die 2 ist in eT versteckt
+
+        if ( dE <= 0 || pow(ETh, dE)*RAND_MAX > rand()) {
+            flip(x,y);
+        }
+    }
+}
+
+void Model::KeyPressed(char key)
+{
+
+}
+
+int Model::flip(int x, int y){
+    SetNodeMagnetization(x, y, -GetMagnetization(x,y));
+    TotalMagnetization += 2*GetMagnetization(x,y);
+}
+
+
 void Model::SetGridWidth(int width)
 {
     SetGrid(GridHeight,width);
@@ -57,33 +140,29 @@ void Model::SetGridHeight(int height)
     SetGrid(height, GridWidth);
 }
 
-int Model::InitModel()
+void Model::InitModel()
 {
     T = 1940.0;
-//    updateT();
+    updateT();
     dT = 1.000;
     H = 0.001;// in eV
     dH = 0.001;
     J = 0.042;// in eV
-//    update_strings();
-   return SetLattice();
+    SetLattice();
 }
 
-// das eigentliche gitter und die gitter zur mittelwertbildung werden gefuellt
-// das eigentliche gitter ist nach zufall mit -1 oder 1 gefuellt;
-// die anfangs-magnetisierung und die anfangsenergie werden auch gleich berechnet
-int Model::SetLattice(){
+void Model::updateT (){
+    double kBT = T*BOLTZMANN_CONST;
+    ETh = exp ((long double) -2.0/(kBT));
+}
+
+void Model::SetLattice(){
     TotalMagnetization = 0;
-    if (GridWidth <= 0 || GridHeight <= 0) return 0;
-    for (int i = 0; i < GridWidth; i++){
-        for (int j = 0; j < GridHeight; j++)
+    for (int x = 0; x < GridWidth; x++){
+        for (int y = 0; y < GridHeight; y++)
         {
-            int index = i*GridHeight + j;
-            NodeMagnetization[index] = 2*(rand()%2) - 1;
-            MeanNodeMagnetization[index] = 0;
-            TotalMagnetization += NodeMagnetization[index];
+            SetNodeMagnetization(x,y, 2*(rand()%2) - 1);
+            TotalMagnetization += GetMagnetization(x,y);
         }
     }
-    //Ecurrent = Ef();
-    return 1;
 }

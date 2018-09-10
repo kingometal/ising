@@ -4,5 +4,6 @@ ising.h
 main.cpp
 model.cpp
 model.h
+modelinterface.h
 view.cpp
 view.h

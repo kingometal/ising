@@ -1,31 +1,26 @@
 #include "view.h"
+#include "model.h"
 #include <pthread.h>
 #include <iostream>
 
-
-
-//void putPixelRGB(SDL_Renderer* renderer, int x, int y, unsigned char r, unsigned char g, unsigned char b)
-//{
-//    SDL_SetRenderDrawColor(renderer, (Uint8)r, (Uint8)g, (Uint8)b, 255);
-//    SDL_RenderDrawPoint(renderer, x, y);
-//}
-
+const int SCREEN_WIDTH = 500;
+const int SCREEN_HEIGHT = 500;
 
 int main(int argc, char** argv) 
 {
-    uint32_t PixelBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
-    pthread_t thread_info;
-    int  iret;
+    Model model (SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    iret = pthread_create( &thread_info, NULL, &run, PixelBuffer);
-
-    pthread_t thread_info2;
-    int  iret2;
-    iret2 = pthread_create( &thread_info2, NULL, &fillPixels, PixelBuffer);
-
-    pthread_join(thread_info2, NULL);
-
-    pthread_join(thread_info, NULL);
-    //    run((void*) NULL);
+    { // drawing thread
+	    pthread_t thread_info;
+	    int  iret;
+	    iret = pthread_create( &thread_info, NULL, &run, &model);
+	    { // calculating thread
+		    pthread_t thread_info2;
+		    int  iret2;
+		    iret2 = pthread_create( &thread_info2, NULL, &fillPixels, &model);
+		    pthread_join(thread_info2, NULL);
+	    }
+	pthread_join(thread_info, NULL);
+    }
     return 0;
 }
