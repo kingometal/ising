@@ -10,16 +10,16 @@ all: directories $(EXECUTABLE)
 
 
 $(EXECUTABLE): $(OUTDIR)/main.o
-	$(GCC) -o $(EXECUTABLE) $(OUTDIR)/main.o $(OUTDIR)/view.o $(OUTDIR)/model.o $(FLAGS)
+	$(GCC) -o $(EXECUTABLE) $(OUTDIR)/main.o $(OUTDIR)/View.o $(OUTDIR)/Model.o $(FLAGS)
 
-$(OUTDIR)/main.o: main.cpp $(OUTDIR)/view.o $(OUTDIR)/model.o
+$(OUTDIR)/main.o: main.cpp $(OUTDIR)/View.o $(OUTDIR)/Model.o
 	$(GCC) $(FLAGS) -c main.cpp -o $(OUTDIR)/main.o
 
-$(OUTDIR)/view.o: view.cpp view.h $(OUTDIR)/model.o
-	$(GCC) $(FLAGS) -c view.cpp -o $(OUTDIR)/view.o
+$(OUTDIR)/View.o: View.cpp View.h $(OUTDIR)/Model.o
+	$(GCC) $(FLAGS) -c View.cpp -o $(OUTDIR)/View.o
 
-$(OUTDIR)/model.o: model.cpp model.h modelinterface.h
-	$(GCC) $(FLAGS) -c model.cpp -o $(OUTDIR)/model.o
+$(OUTDIR)/Model.o: Model.cpp Model.h ModelInterface.h
+	$(GCC) $(FLAGS) -c Model.cpp -o $(OUTDIR)/Model.o
 
 
 directories: $(OUTDIR)

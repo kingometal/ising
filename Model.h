@@ -1,9 +1,7 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "modelinterface.h"
-//int *s, *sm;//das Gitter und zusaetzliche Arrays zur Mittelwertbildung
-//int m;//Magnetisierung
+#include "ModelInterface.h"
 
 namespace Ising
 {

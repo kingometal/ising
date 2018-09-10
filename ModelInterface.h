@@ -1,7 +1,7 @@
-#ifndef MODELINTERFACE_H
-#define MODELINTERFACE_H
+#ifndef MODEL_INTERFACE_H
+#define MODEL_INTERFACE_H
 
-#include "keycodes.h"
+#include "KeyCodes.h"
 
 class ModelInterface
 {
@@ -18,4 +18,4 @@ public:
     virtual void KeyPressed(KeyCode key) = 0;
 };
 
-#endif // MODELINTERFACE_H
+#endif // MODEL_INTERFACE_H

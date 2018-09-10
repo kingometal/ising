@@ -1,5 +1,5 @@
-#include "view.h"
-#include "model.h"
+#include "View.h"
+#include "Model.h"
 #include <pthread.h>
 #include <iostream>
 

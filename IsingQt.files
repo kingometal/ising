@@ -1,10 +1,8 @@
 Makefile
-ising.cc
-ising.h
-keycodes.h
+KeyCodes.h
 main.cpp
-model.cpp
-model.h
-modelinterface.h
-view.cpp
-view.h
+Model.cpp
+Model.h
+ModelInterface.h
+View.cpp
+View.h

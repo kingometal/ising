@@ -1,4 +1,4 @@
-#include "model.h"
+#include "Model.h"
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
@@ -6,7 +6,7 @@
 namespace
 {
 const double BOLTZMANN_CONST = 0.00008673324; //Boltzmann constant;
-const double DEFAULT_TEMPERATURE = 1940.0; // in K (Kelvin)
+const double DEFAULT_TEMPERATURE = 1040.0; // in K (Kelvin) 1940.0; // in K (Kelvin)
 const double DEFAULT_TEMPERATURE_STEP = 1.000; // in K
 const double DEFAULT_MAGNETIC_FIELD = 0.001; // in eV (electronvolt)
 const double DEFAULT_MAGNETIC_FIELD_STEP = 0.001; // in eV

@@ -1,5 +1,5 @@
-#include "view.h"
-#include "modelinterface.h"
+#include "View.h"
+#include "ModelInterface.h"
 #include <SDL2/SDL.h>
 #include <chrono>
 #include <iostream>
@@ -18,20 +18,13 @@ void* RunView(void* arg)
     int height = model->GetHeight();
     int width = model->GetWidth();
 
-    //The window we'll be rendering to
-    SDL_Window* gWindow = NULL;
-    //The surface contained by the window
-    SDL_Surface* gScreenSurface = NULL;
-
-    //Start up SDL and create window
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
         printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     }
     else
     {
-        //Create window
-        gWindow = SDL_CreateWindow( "Ising Model", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN );
+        SDL_Window* gWindow = SDL_CreateWindow( "Ising Model", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN );
         if( gWindow == NULL )
         {
             printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
@@ -39,7 +32,7 @@ void* RunView(void* arg)
         else
         {
             //Get window surface
-            gScreenSurface = SDL_GetWindowSurface( gWindow );
+            SDL_Surface* gScreenSurface = SDL_GetWindowSurface( gWindow );
 
             if (NULL == gScreenSurface)
             {
