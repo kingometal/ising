@@ -3,8 +3,8 @@
 #include <pthread.h>
 #include <iostream>
 
-const int SCREEN_WIDTH = 300;
-const int SCREEN_HEIGHT = 300;
+const int SCREEN_WIDTH = 1200;
+const int SCREEN_HEIGHT = 800;
 
 int main(int argc, char** argv) 
 {
