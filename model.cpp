@@ -3,53 +3,65 @@
 #include <iostream>
 #include <cmath>
 
-//die Gitterseitenlaenge N wird festgelegt, und alles, was davon abhaengt wird erneuert
-//int setN(int argv){
-//    if (argv > 0){
-//        N = argv;
-//        NN = N*N;
-//        N2 = 2*N;
-//        speed = 1.0*NN;
-//        rezNN = 1.0/(double)NN;
-//        s = (int*) malloc((int)sizeof(int)*NN); //das eigentliche gitter
-//        sm = (int*) malloc((int)sizeof(int)*NN); // zur mittelwertbildung
-//        SizeN = Size*N; // falls das fenster skaliert sein soll
-//        height = SizeN+90; //90 px reservieren wir fuer die textausgabe
-//        width = (SizeN<300)?300:SizeN; // mindestens 300 px fuer die textausgabe
-//        return 1;
-//    }
-//    else return 0;
-//}
-
 namespace
 {
-const double BOLTZMANN_CONST = 0.00008673324; //Boltzmann-Konstante;
+const double BOLTZMANN_CONST = 0.00008673324; //Boltzmann constant;
+const double DEFAULT_TEMPERATURE = 1940.0; // in K (Kelvin)
+const double DEFAULT_TEMPERATURE_STEP = 1.000; // in K
+const double DEFAULT_MAGNETIC_FIELD = 0.001; // in eV (electronvolt)
+const double DEFAULT_MAGNETIC_FIELD_STEP = 0.001; // in eV
+const double DEFAULT_J = 0.042; // interaction energy in eV
+const double MINIMUM_MAGNETIC_FIELD_STEP = 0.0000000001;
+const double MINIMUM_TEMPERATURE_STEP = 0.0000000001;
 }
 
-Model::Model()
-{
-
-}
+using namespace Ising;
 
 Model::Model(int width, int height)
+    : GridWidth(width)
+    , GridHeight(height)
+    , NodeMagnetization(NULL)
+    , MeanNodeMagnetization(NULL)
+    , TotalMagnetization(0)
+    , ChecksPerIteration(width*height)
+    , T(DEFAULT_TEMPERATURE)
+    , dT(DEFAULT_TEMPERATURE_STEP)
+    , H(DEFAULT_MAGNETIC_FIELD)
+    , dH(DEFAULT_MAGNETIC_FIELD_STEP)
+    , J (DEFAULT_J)
+    , ETh(exp ((long double) -2.0/(T * BOLTZMANN_CONST)))
 {
-    GridWidth = width;
-    GridHeight = height;
-    SetGrid(width, height);
-    InitModel();
+    ReinitGrid(width, height);
+    ReinitModel();
 }
 
 Model::~Model()
 {
-
+    DeinitGrid();
 }
 
+void Model::DeinitGrid()
+{
+    if (NULL != NodeMagnetization)
+    {
+        delete NodeMagnetization;
+        NodeMagnetization = NULL;
+    }
+    if (NULL != MeanNodeMagnetization)
+    {
+        delete MeanNodeMagnetization;
+        MeanNodeMagnetization = NULL;
+    }
+}
 
-void Model::SetGrid(int width, int height)
+void Model::ReinitGrid(int width, int height)
 {
     GridHeight = height;
     GridWidth = width;
     int NN = width * height;
+
+    DeinitGrid();
+
     if (NN > 0)
     {
         NodeMagnetization = (int*) malloc((int)sizeof(int)*NN); //das eigentliche gitter
@@ -57,7 +69,7 @@ void Model::SetGrid(int width, int height)
     }
     else
     {
-        std::cout << "can not set grid yet: width or height is zero : " << width << " : " << height << std::endl;
+        std::cerr << "can not set grid yet: width or height is zero : " << width << " : " << height << std::endl;
     }
 }
 
@@ -73,7 +85,7 @@ int Model::GetHeight()
 
 bool Model::GetBinaryData(int x, int y)
 {
-    return (GetMagnetization(x,y) > 0);
+    return (GetNodeMagnetization(x,y) > 0);
 }
 
 int Model::GetData(int x, int y)
@@ -81,9 +93,14 @@ int Model::GetData(int x, int y)
     return 0;
 }
 
-int Model::GetMagnetization(int x, int y)
+int Model::GetNodeMagnetization(int x, int y)
 {
     return NodeMagnetization[x*GridHeight + y];
+}
+
+int Model::GetNodeMagnetization(int index)
+{
+    return NodeMagnetization[index];
 }
 
 int Model::SetNodeMagnetization(int x, int y, int value)
@@ -95,74 +112,91 @@ void Model::Iterate()
 {
     int w = GridWidth;
     int h = GridHeight;
-
-    for (int i = 0; i < w*h/10; i++)
+    int mf = 0; // Mean field, in this case the sum of the neighbour spins magnetizations
+    int x = 0;
+    int y = 0;
+    int xh = 0; // variable to save computation effort
+    int index = 0; // Node position in a 1D array
+    int indexUpper = 0;
+    int indexLower = 0;
+    int indexRight = 0;
+    int indexLeft = 0;
+    for (int i = 0; i < ChecksPerIteration; i++)
     {
-        int mf = 0;
+        mf = 0;
+        x = rand()%w;//zufaellig ausgewaehlter spin
+        y = rand()%h;//zufaellig ausgewaehlter spin
+        xh = x*h;
+        index = xh + y;
+        indexUpper = xh + (y+h-1)%h;
+        indexLower= xh + (y+1)%h;
+        indexLeft = ((x+w-1)%w)*h + y;
+        indexRight = ((x+1)%w)*h + y;
 
-        int x = rand()%w;//zufaellig ausgewaehlter spin
-        int y = rand()%h;//zufaellig ausgewaehlter spin
+        mf = GetNodeMagnetization(indexUpper) + GetNodeMagnetization(indexLower) + GetNodeMagnetization(indexLeft) + GetNodeMagnetization(indexRight);
 
-        if (x > 0 && x < w-1 && y > 0 && y < w-1){// wenn der spin i im inneren ist, brauche ich kein modulo fuer die nachbarindices
-            mf = GetMagnetization(x,y-1) + GetMagnetization(x,y+1) + GetMagnetization(x+1,y) + GetMagnetization(x-1,y) ;
-        }
-        else
-        {
-            mf = GetMagnetization(x,(y+h-1)%h) + GetMagnetization(x,(y+1)%h) + GetMagnetization((x+1)%w,y) + GetMagnetization((x+w-1)%w,y) ;
-        }
-
-        double dE = (J*mf + H)*GetMagnetization(x,y); // die Energiedifferenz. die 2 ist in eT versteckt
+        double dE = (J*mf + H)*GetNodeMagnetization(index); // energy difference. The 2 is taken into account within ETh
 
         if ( dE <= 0 || pow(ETh, dE)*RAND_MAX > rand()) {
-            flip(x,y);
+            FlipNodeSpin(x,y);
         }
     }
 }
 
-void Model::KeyPressed(char key)
+void Model::KeyPressed(KeyCode key)
 {
-
+    switch(key)
+    {
+    case KEY_NUM_PLUS:      T += dT; ETh = exp ((long double) -2.0/(T * BOLTZMANN_CONST)); printf ("Temperature is now %f\n", T); break;
+    case KEY_NUM_MINUS:     T = (T>dT)?T-dT:0.0; ETh = exp ((long double) -2.0/(T * BOLTZMANN_CONST)); printf ("Temperature is now %f\n", T); break;
+    case KEY_NUM_MULTIPLY:  H += dH; printf ("Magnetic Field is now %f\n", H); break;
+    case KEY_NUM_DIVIDE:    H -= dH; printf ("Magnetic Field is now %f\n", H); break;
+    case KEY_ARROW_LEFT:    dH = (dH <= MINIMUM_MAGNETIC_FIELD_STEP)?MINIMUM_MAGNETIC_FIELD_STEP:dH/10; printf ("Magnetic Field Spep is now %f\n", dH); break;
+    case KEY_ARROW_RIGHT:   dH = dH * 10; printf ("Magnetic Field Spep is now %f\n", dH); break;
+    case KEY_ARROW_DOWN:    dT = (dT <= MINIMUM_TEMPERATURE_STEP)?MINIMUM_TEMPERATURE_STEP:dT/10 ; printf ("Temperature Step is now %f\n", dT); break;
+    case KEY_ARROW_UP:      dT = dT * 10; printf ("Temperature Step is now %f\n", dT); break;
+    case KEY_A:             ChecksPerIteration = (ChecksPerIteration<=1)?1:ChecksPerIteration/2; printf ("Speed is now %i\n", ChecksPerIteration); break;
+    case KEY_S:             ChecksPerIteration *= 2; printf ("Speed is now %i\n", ChecksPerIteration); break;
+    default: break;
+    }
 }
 
-int Model::flip(int x, int y){
-    SetNodeMagnetization(x, y, -GetMagnetization(x,y));
-    TotalMagnetization += 2*GetMagnetization(x,y);
+int Model::FlipNodeSpin(int x, int y){
+    SetNodeMagnetization(x, y, -GetNodeMagnetization(x,y));
+    TotalMagnetization += 2*GetNodeMagnetization(x,y);
 }
 
 
 void Model::SetGridWidth(int width)
 {
-    SetGrid(GridHeight,width);
+    ReinitGrid(GridHeight,width);
 }
 
 void Model::SetGridHeight(int height)
 {
-    SetGrid(height, GridWidth);
+    ReinitGrid(height, GridWidth);
 }
 
-void Model::InitModel()
+void Model::ReinitModel()
 {
-    T = 1940.0;
-    updateT();
-    dT = 1.000;
-    H = 0.001;// in eV
-    dH = 0.001;
-    J = 0.042;// in eV
-    SetLattice();
+    T = DEFAULT_TEMPERATURE;
+
+    dT = DEFAULT_TEMPERATURE_STEP;
+    H = DEFAULT_MAGNETIC_FIELD;// in eV
+    dH = DEFAULT_MAGNETIC_FIELD_STEP;
+    J = DEFAULT_J;// in eV
+
+    ETh = exp ((long double) -2.0/(T*BOLTZMANN_CONST));
+    ResetMagnetizationState();
 }
 
-void Model::updateT (){
-    double kBT = T*BOLTZMANN_CONST;
-    ETh = exp ((long double) -2.0/(kBT));
-}
-
-void Model::SetLattice(){
+void Model::ResetMagnetizationState(){
     TotalMagnetization = 0;
     for (int x = 0; x < GridWidth; x++){
         for (int y = 0; y < GridHeight; y++)
         {
             SetNodeMagnetization(x,y, 2*(rand()%2) - 1);
-            TotalMagnetization += GetMagnetization(x,y);
+            TotalMagnetization += GetNodeMagnetization(x,y);
         }
     }
 }

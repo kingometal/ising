@@ -5,11 +5,11 @@
 //int *s, *sm;//das Gitter und zusaetzliche Arrays zur Mittelwertbildung
 //int m;//Magnetisierung
 
-
+namespace Ising
+{
 class Model: public ModelInterface
 {
 public:
-    Model();
     Model(int width, int height);
     ~Model();
 
@@ -18,6 +18,7 @@ public:
     int *NodeMagnetization;
     int *MeanNodeMagnetization;
     int TotalMagnetization;
+    int ChecksPerIteration; // How many nodes are calculated in one iteration
     double T;
     double dT;
     double H;
@@ -27,9 +28,9 @@ public:
 
     void SetGridWidth(int width);
     void SetGridHeight(int height);
-    void InitModel();
-    void SetLattice();
-    void SetGrid(int width, int height);
+    void ReinitModel();
+    void ResetMagnetizationState();
+
 
     int GetWidth();
     int GetHeight();
@@ -37,12 +38,14 @@ public:
     int GetData(int x, int y);
 
     void Iterate();
-    void KeyPressed(char key);
+    void KeyPressed(KeyCode key);
 private:
-    int flip(int x, int y);
-    int GetMagnetization(int x, int y);
+    int FlipNodeSpin(int x, int y);
+    int GetNodeMagnetization(int x, int y);
     int SetNodeMagnetization(int x, int y, int value);
-    void updateT();
+    void ReinitGrid(int width, int height);
+    void DeinitGrid();
+    int GetNodeMagnetization(int index);
 };
-
+} // namespace
 #endif //MODEL_H

@@ -1,6 +1,8 @@
 #ifndef MODELINTERFACE_H
 #define MODELINTERFACE_H
 
+#include "keycodes.h"
+
 class ModelInterface
 {
 public:
@@ -13,7 +15,7 @@ public:
     virtual int GetData(int x, int y) = 0;
 
     virtual void Iterate() = 0;
-    virtual void KeyPressed(char key) = 0;
+    virtual void KeyPressed(KeyCode key) = 0;
 };
 
 #endif // MODELINTERFACE_H

@@ -1,6 +1,7 @@
 Makefile
 ising.cc
 ising.h
+keycodes.h
 main.cpp
 model.cpp
 model.h

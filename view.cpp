@@ -1,18 +1,17 @@
 #include "view.h"
+#include "modelinterface.h"
 #include <SDL2/SDL.h>
 #include <chrono>
 #include <iostream>
 #include <unistd.h>
-#include "modelinterface.h"
 
 namespace
 {
-
     bool Quit;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
-void* run(void* arg)
+void* RunView(void* arg)
 {
     ModelInterface* model = static_cast<ModelInterface*>(arg);
 
@@ -78,15 +77,47 @@ void* run(void* arg)
                         else if( e.type == SDL_KEYDOWN )
                         {
                             //Select surfaces based on key press
+                            pthread_mutex_lock(&mutex); // critical section
                             switch( e.key.keysym.sym )
                             {
                             case SDLK_q: Quit = true;
                                 break;
+                            case SDLK_KP_PLUS:
+                                model->KeyPressed(KEY_NUM_PLUS);
+                                break;
+                            case SDLK_KP_MINUS:
+                                model->KeyPressed(KEY_NUM_MINUS);
+                                break;
+                            case SDLK_KP_DIVIDE:
+                                model->KeyPressed(KEY_NUM_DIVIDE);
+                                break;
+                            case SDLK_KP_MULTIPLY:
+                                model->KeyPressed(KEY_NUM_MULTIPLY);
+                                break;
+                            case SDLK_LEFT:
+                                model->KeyPressed(KEY_ARROW_LEFT);
+                                break;
+                            case SDLK_RIGHT:
+                                model->KeyPressed(KEY_ARROW_RIGHT);
+                                break;
+                            case SDLK_UP:
+                                model->KeyPressed(KEY_ARROW_UP);
+                                break;
+                            case SDLK_DOWN:
+                                model->KeyPressed(KEY_ARROW_DOWN);
+                                break;
+                            case SDLK_a:
+                                model->KeyPressed(KEY_A);
+                                break;
+                            case SDLK_s:
+                                model->KeyPressed(KEY_S);
+                                break;
+
 
                             default:
                                 break;
                             }
-
+                            pthread_mutex_unlock(&mutex); // end of critical section
                         }
                     }
 
@@ -131,11 +162,9 @@ void* run(void* arg)
                                     }
 
                                 }
-                 //usleep(10);
                             }
                         }
                         pthread_mutex_unlock(&mutex);
-                   // usleep(50000);
                         //-----------------------
 
                         //Update the surface
@@ -158,7 +187,7 @@ void* run(void* arg)
     return NULL;
 }
 
-void* fillPixels(void* arg)
+void* RunModel(void* arg)
 {
     ModelInterface* model = static_cast<ModelInterface*> (arg);
 
@@ -167,8 +196,6 @@ void* fillPixels(void* arg)
         pthread_mutex_lock(&mutex);
         model->Iterate();
         pthread_mutex_unlock(&mutex);
-
-        usleep(100);
     }
     return NULL;
 }
