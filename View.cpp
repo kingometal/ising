@@ -189,6 +189,7 @@ void* RunModel(void* arg)
         pthread_mutex_lock(&mutex);
         model->Iterate();
         pthread_mutex_unlock(&mutex);
+	usleep(100);
     }
     return NULL;
 }
