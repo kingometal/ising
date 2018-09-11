@@ -9,6 +9,7 @@ namespace
 {
     bool Quit;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    const int MAX_FPS = 50;
 }
 
 void* RunView(void* arg)
@@ -53,6 +54,10 @@ void* RunView(void* arg)
                 std::chrono::milliseconds currentTime = std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch());
                 std::chrono::milliseconds previousCheckpoint = currentTime;
                 int framecount = 0;
+                uint64_t currentFrameOutputTime = SDL_GetPerformanceCounter();
+                uint64_t lastFrameOutputTime = currentFrameOutputTime;
+		double min_frame_time = 1.0/(double)MAX_FPS;
+
                 //-----------------
 
                 // Main Loop
@@ -159,11 +164,14 @@ void* RunView(void* arg)
                         }
                         pthread_mutex_unlock(&mutex);
                         //-----------------------
-
                         //Update the surface
-                        SDL_UpdateWindowSurface( gWindow );
-                        //                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-                    }
+                        currentFrameOutputTime = SDL_GetPerformanceCounter();
+                        if ((double)(currentFrameOutputTime-lastFrameOutputTime)/(double) SDL_GetPerformanceFrequency() > min_frame_time)
+                        {
+                           SDL_UpdateWindowSurface( gWindow );
+                           lastFrameOutputTime = currentFrameOutputTime;
+                        }
+		    }
                 }
 
                 //Deallocate surface
