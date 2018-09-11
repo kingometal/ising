@@ -11,6 +11,24 @@ public:
     Model(int width, int height);
     ~Model();
 
+    int GetWidth();
+    int GetHeight();
+    bool GetBinaryData(int x, int y);
+    bool GetBinaryData(int index);
+    int GetData(int x, int y);
+
+    void Iterate();
+    void KeyPressed(KeyCode key);
+private:
+    void ReinitModel();
+    void ResetMagnetizationState();
+    int FlipNodeSpin(int x, int y);
+    int GetNodeMagnetization(int x, int y);
+    int SetNodeMagnetization(int x, int y, int value);
+    void ReinitGrid(int width, int height);
+    void DeinitGrid();
+    int GetNodeMagnetization(int index);
+
     int GridWidth;
     int GridHeight;
     int *NodeMagnetization;
@@ -23,27 +41,6 @@ public:
     double dH;
     double J;
     double ETh; //Thermal energy
-
-    void SetGridWidth(int width);
-    void SetGridHeight(int height);
-    void ReinitModel();
-    void ResetMagnetizationState();
-
-
-    int GetWidth();
-    int GetHeight();
-    bool GetBinaryData(int x, int y);
-    int GetData(int x, int y);
-
-    void Iterate();
-    void KeyPressed(KeyCode key);
-private:
-    int FlipNodeSpin(int x, int y);
-    int GetNodeMagnetization(int x, int y);
-    int SetNodeMagnetization(int x, int y, int value);
-    void ReinitGrid(int width, int height);
-    void DeinitGrid();
-    int GetNodeMagnetization(int index);
 };
 } // namespace
 #endif //MODEL_H

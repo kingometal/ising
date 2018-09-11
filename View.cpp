@@ -7,9 +7,9 @@
 
 namespace
 {
-    bool Quit;
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    const int MAX_FPS = 50;
+bool Quit;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+const int MAX_FPS = 50;
 }
 
 void* RunView(void* arg)
@@ -41,23 +41,32 @@ void* RunView(void* arg)
             }
             else
             {
-
                 //Main loop flag
                 Quit = false;
-                //Event handler
+
+                // Event handler
                 SDL_Event e;
+
+                // pixel array to write data to
                 uint32_t* pixels = ((Uint32 *) (gScreenSurface->pixels));
 
+                // Init array index optimization
+                unsigned int indexOfBeginOfNextRow = width;
+                unsigned int fieldCount = width*height;
 
                 //-----------------
                 // Init FPS counter
-                std::chrono::milliseconds currentTime = std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch());
-                std::chrono::milliseconds previousCheckpoint = currentTime;
-                int framecount = 0;
+                uint64_t NOW = SDL_GetPerformanceCounter();
+                uint64_t LAST = NOW;
+                unsigned int framecount = 0;
+                //-----------------
+
+
+                //-----------------
+                // Init FPS restriction
                 uint64_t currentFrameOutputTime = SDL_GetPerformanceCounter();
                 uint64_t lastFrameOutputTime = currentFrameOutputTime;
-		double min_frame_time = 1.0/(double)MAX_FPS;
-
+                double min_frame_time = 1.0/(double)MAX_FPS;
                 //-----------------
 
                 // Main Loop
@@ -113,6 +122,7 @@ void* RunView(void* arg)
 
 
                             default:
+
                                 break;
                             }
                             pthread_mutex_unlock(&mutex); // end of critical section
@@ -121,58 +131,48 @@ void* RunView(void* arg)
 
                     //-----------------------
                     // FPS counter
+                    NOW = SDL_GetPerformanceCounter();
+                    if (((double) (NOW - LAST) / (double)SDL_GetPerformanceFrequency()) > 1.0)
                     {
-                        ++framecount;
-                        currentTime = std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch());
-                        if ( (currentTime - previousCheckpoint).count() >= 1000)
-                        {
-                            if (currentTime > previousCheckpoint)
-                            {
-                                std::cout << "fps:" << (double) (framecount) / (double) ((currentTime-previousCheckpoint).count()/1000.0) << std::endl;
-                            }
-                            framecount = 0;
-                            previousCheckpoint = currentTime;
-                        }
+                        // FPS output
+                        std::cout << "FPS: " << framecount/(double)((NOW - LAST) / (double)SDL_GetPerformanceFrequency() ) << std::endl;
+                        LAST = NOW;
+                        framecount = 0;
                     }
                     //-----------------------
 
-
-                    //                SDL_BlitSurface( gCurrentSurface, NULL, gScreenSurface, NULL );
                     //-----------------------
                     // Fill Surface
+                    pthread_mutex_lock(&mutex);
+                    for (unsigned int offset = 0; offset < fieldCount; offset=indexOfBeginOfNextRow)
                     {
-                        pthread_mutex_lock(&mutex);
-                        if (gScreenSurface != NULL)
+                        indexOfBeginOfNextRow = offset+width;
+                        for (unsigned int index = offset; index < indexOfBeginOfNextRow; index++)
                         {
-                            for (int y = 0; y < gScreenSurface->h; y++)
+                            if (model->GetBinaryData(index))
                             {
-                                int index0 = y * gScreenSurface->w;
-                                for (int x = 0; x < gScreenSurface->w; x++)
-                                {
-                                    int index = index0 + x;
-                                    if (model->GetBinaryData(x, y))
-                                    {
-                                        pixels[index] = 0x00000000;
-                                    }
-                                    else
-                                    {
-                                        pixels[index] = 0xFFFFFFFF;
-                                    }
-
-                                }
+                                pixels[index] = 0x00000000;
+                            }
+                            else
+                            {
+                                pixels[index] = 0xFFFFFFFF;
                             }
                         }
-                        pthread_mutex_unlock(&mutex);
-                        //-----------------------
-                        //Update the surface
-                        currentFrameOutputTime = SDL_GetPerformanceCounter();
-                        if ((double)(currentFrameOutputTime-lastFrameOutputTime)/(double) SDL_GetPerformanceFrequency() > min_frame_time)
-                        {
-                           SDL_UpdateWindowSurface( gWindow );
-                           lastFrameOutputTime = currentFrameOutputTime;
-                        }
-		    }
-                }
+                    }
+                    pthread_mutex_unlock(&mutex);
+                    //-----------------------
+
+                    //Update the surface
+                    currentFrameOutputTime = SDL_GetPerformanceCounter();
+                    if ((double)(currentFrameOutputTime-lastFrameOutputTime)/(double) SDL_GetPerformanceFrequency() > min_frame_time)
+                    {
+                        SDL_UpdateWindowSurface( gWindow );
+                        //                        std::cout << (double)(SDL_GetPerformanceCounter() - currentFrameOutputTime)/(double) SDL_GetPerformanceFrequency() * 1000 << " ms" << std::endl;
+                        lastFrameOutputTime = currentFrameOutputTime;
+                        ++framecount;
+
+                    }
+                } // END main loop
 
                 //Deallocate surface
                 SDL_FreeSurface( gScreenSurface );
@@ -197,7 +197,7 @@ void* RunModel(void* arg)
         pthread_mutex_lock(&mutex);
         model->Iterate();
         pthread_mutex_unlock(&mutex);
-	usleep(100);
+        usleep(100);
     }
     return NULL;
 }

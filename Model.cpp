@@ -88,6 +88,11 @@ bool Model::GetBinaryData(int x, int y)
     return (GetNodeMagnetization(x,y) > 0);
 }
 
+bool Model::GetBinaryData(int index)
+{
+    return (GetNodeMagnetization(index) > 0);
+}
+
 int Model::GetData(int x, int y)
 {
     return 0;
@@ -164,17 +169,6 @@ void Model::KeyPressed(KeyCode key)
 int Model::FlipNodeSpin(int x, int y){
     SetNodeMagnetization(x, y, -GetNodeMagnetization(x,y));
     TotalMagnetization += 2*GetNodeMagnetization(x,y);
-}
-
-
-void Model::SetGridWidth(int width)
-{
-    ReinitGrid(GridHeight,width);
-}
-
-void Model::SetGridHeight(int height)
-{
-    ReinitGrid(height, GridWidth);
 }
 
 void Model::ReinitModel()

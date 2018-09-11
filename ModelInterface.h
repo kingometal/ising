@@ -12,6 +12,7 @@ public:
     virtual int GetWidth() = 0;
     virtual int GetHeight() = 0;
     virtual bool GetBinaryData(int x, int y) = 0;
+    virtual bool GetBinaryData(int index) = 0;
     virtual int GetData(int x, int y) = 0;
 
     virtual void Iterate() = 0;
